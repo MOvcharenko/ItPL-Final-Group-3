@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prototype — Academic Scheduling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16181B; --ink-2:#42464C; --muted:#6C7078; --faint:#9BA0A6;
+  --line:#D8DADD; --line-soft:#E8E9EB; --surface:#FFFFFF; --bg:#F2F3F4; --bg-2:#EAEBEC;
+  --accent:#3E5C9A; --accent-soft:#E8ECF5; --accent-ink:#25396B;
+  --draft:#8C8258; --draft-soft:#F2EFE4; --draft-ink:#5E5638;
+  --warn:#9C3E3E; --warn-soft:#F6E9E9; --warn-ink:#6E2C2C;
+  --ok:#3E7A5C; --ok-soft:#E8F1EC;
+  --radius:3px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#EDEEEF; --ink-2:#C7CACE; --muted:#9CA0A6; --faint:#6C7078;
+    --line:#3A3D42; --line-soft:#2C2F33; --surface:#1B1D20; --bg:#141517; --bg-2:#232629;
+    --accent:#7C96D6; --accent-soft:#232B3E; --accent-ink:#B9C6EA;
+    --draft:#C9BD8A; --draft-soft:#2E2A1C; --draft-ink:#E1D6A6;
+    --warn:#D68A8A; --warn-soft:#3A2222; --warn-ink:#F0B4B4;
+    --ok:#8FC7AA; --ok-soft:#1E2E26;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#EDEEEF; --ink-2:#C7CACE; --muted:#9CA0A6; --faint:#6C7078;
+  --line:#3A3D42; --line-soft:#2C2F33; --surface:#1B1D20; --bg:#141517; --bg-2:#232629;
+  --accent:#7C96D6; --accent-soft:#232B3E; --accent-ink:#B9C6EA;
+  --draft:#C9BD8A; --draft-soft:#2E2A1C; --draft-ink:#E1D6A6;
+  --warn:#D68A8A; --warn-soft:#3A2222; --warn-ink:#F0B4B4;
+  --ok:#8FC7AA; --ok-soft:#1E2E26;
+}
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'IBM Plex Sans',-apple-system,Segoe UI,Arial,sans-serif;
+  color:var(--ink); background:var(--bg); font-size:14px; line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;}
+a{color:inherit;}
+button{font-family:inherit;font-size:inherit;cursor:pointer;}
+
+.app-shell{display:flex; min-height:100vh;}
+
+/* ---------- Sidebar ---------- */
+.sidebar{background:var(--surface); border-right:1px solid var(--line); padding:20px 16px; display:flex; flex-direction:column; gap:22px; flex:0 0 232px; width:232px;}
+.wordmark{display:flex; flex-direction:column; gap:2px; padding:0 4px;}
+.wordmark .name{font-weight:600; font-size:15px; letter-spacing:.01em;}
+.wordmark .sub{font-size:11.5px; color:var(--muted);}
+
+.nav-group{display:flex; flex-direction:column; gap:1px;}
+.nav-label{font-size:11px; color:var(--faint); padding:0 10px; margin-bottom:6px;}
+.nav-item{display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:var(--radius); font-size:13.5px; color:var(--ink-2); border:1px solid transparent; background:none; text-align:left; width:100%;}
+.nav-item .dot{width:6px;height:6px;border-radius:50%;background:var(--line);flex:none;}
+.nav-item.active{background:var(--bg-2); color:var(--ink); font-weight:500; border-color:var(--line-soft);}
+.nav-item.active .dot{background:var(--accent);}
+
+.sidebar-foot{margin-top:auto; padding-top:14px; border-top:1px solid var(--line-soft); display:flex; gap:9px; align-items:center;}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--bg-2); border:1px solid var(--line); display:flex;align-items:center;justify-content:center; font-size:11px; color:var(--ink-2); flex:none;}
+.sidebar-foot .who{display:flex; flex-direction:column; line-height:1.25;}
+.sidebar-foot .who .n{font-size:12.5px; font-weight:500;}
+.sidebar-foot .who .r{font-size:11px; color:var(--muted);}
+.switch-account{width:100%; justify-content:center; margin-top:2px; font-size:12px; padding:6px 8px;}
+
+/* ---------- Landing / sign-in ---------- */
+.landing-wrap{min-height:100vh; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:60px 20px; background:var(--bg);}
+.landing-brand{display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;}
+.landing-brand .name{font-size:19px; font-weight:600; color:var(--ink);}
+.landing-brand .sub{font-size:12.5px; color:var(--muted);}
+.landing-cards{display:flex; flex-wrap:wrap; justify-content:center; max-width:760px;}
+.account-card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; width:216px; display:flex; flex-direction:column; gap:9px; align-items:flex-start; text-align:left; margin:0 7px 14px 7px;}
+.account-card:hover{border-color:var(--accent);}
+.avatar-lg{width:36px;height:36px;border-radius:50%;background:var(--bg-2); border:1px solid var(--line); display:flex;align-items:center;justify-content:center; font-size:13px; font-weight:600; color:var(--ink-2);}
+.account-card .aname{font-size:13.5px; font-weight:600; color:var(--ink);}
+.account-card .arole{font-size:11.5px; color:var(--accent); font-weight:500; margin-top:-6px;}
+.account-card .blurb{font-size:11.5px; color:var(--muted); line-height:1.4;}
+.account-card .go{font-size:11.5px; color:var(--ink-2); margin-top:6px; padding-top:8px; border-top:1px solid var(--line-soft); width:100%;}
+.landing-note{text-align:center; max-width:420px; font-size:12px; color:var(--muted);}
+
+/* ---------- Main ---------- */
+.main{display:flex; flex-direction:column; min-width:0; flex:1;}
+.topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 26px; border-bottom:1px solid var(--line); background:var(--surface); gap:16px; flex-wrap:wrap;}
+.crumb{display:flex; align-items:baseline; gap:10px;}
+.crumb h1{font-size:17px; margin:0; font-weight:600;}
+.crumb .term{font-size:12.5px; color:var(--muted); border:1px solid var(--line); border-radius:var(--radius); padding:3px 8px;}
+.top-actions{display:flex; gap:8px; align-items:center;}
+
+.btn{border:1px solid var(--line); background:var(--surface); color:var(--ink-2); padding:7px 13px; border-radius:var(--radius); font-size:13px; display:inline-flex; align-items:center; gap:6px;}
+.btn.primary{background:var(--ink); border-color:var(--ink); color:#fff;}
+.btn.quiet{border-color:transparent; color:var(--muted);}
+.btn.danger-line{border-color:var(--warn); color:var(--warn-ink);}
+
+.content{padding:22px 26px; display:flex; flex-direction:column; gap:18px; flex:1;}
+
+.tag{display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:2px 8px; border-radius:20px; font-weight:500;}
+.tag.published{background:var(--accent-soft); color:var(--accent-ink);}
+.tag.draft{background:var(--draft-soft); color:var(--draft-ink);}
+.tag.conflict{background:var(--warn-soft); color:var(--warn-ink);}
+.tag.ok{background:var(--ok-soft); color:#295C42;}
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);}
+.panel-head{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line-soft);}
+.panel-head h2{font-size:13.5px; margin:0; font-weight:600;}
+.panel-head .meta{font-size:12px; color:var(--muted);}
+.panel-body{padding:14px 16px;}
+
+.split{display:flex; gap:16px; align-items:flex-start;}
+.split > div:first-child{flex:0 0 280px; width:280px;}
+.split > div:last-child, .split > .panel{flex:1; min-width:0;}
+
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{text-align:left; font-size:11.5px; color:var(--muted); font-weight:500; padding:8px 10px; border-bottom:1px solid var(--line);}
+td{padding:9px 10px; border-bottom:1px solid var(--line-soft); vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+
+.chip{display:inline-flex; align-items:center; font-size:12px; padding:3px 9px; border:1px solid var(--line); border-radius:20px; color:var(--ink-2); background:var(--bg-2); margin:2px 4px 2px 0;}
+
+.field{display:flex; flex-direction:column; gap:5px;}
+.field label{font-size:11.5px; color:var(--muted);}
+.field input, .field select{border:1px solid var(--line); border-radius:var(--radius); padding:7px 9px; font-size:13px; font-family:inherit; background:var(--surface); color:var(--ink);}
+.filter-row{display:flex; gap:12px; flex-wrap:wrap; align-items:end;}
+.check-row{display:flex; flex-wrap:wrap;}
+.check{display:inline-flex; align-items:center; font-size:13px; color:var(--ink-2); margin-right:20px;}
+
+/* section list (draft cards) */
+.sec-card{border:1px solid var(--line); border-radius:var(--radius); padding:10px 11px; margin-bottom:8px; background:var(--surface);}
+.sec-card .top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+.sec-card .code{font-weight:600; font-size:13px;}
+.sec-card .title{font-size:12px; color:var(--muted); margin-top:1px;}
+.sec-card .meta{font-size:11.5px; color:var(--muted); margin-top:7px; display:flex; flex-direction:column; gap:2px;}
+
+/* timetable grid — flexbox based (grid template columns not used: renderer has no CSS Grid support) */
+.grid-wrap{overflow-x:auto;}
+.tt-grid{border-top:1px solid var(--line); border-left:1px solid var(--line); min-width:800px;}
+.tt-header-row{display:flex;}
+.tt-corner{flex:0 0 56px; width:56px; background:var(--surface); border-right:1px solid var(--line); border-bottom:1px solid var(--line);}
+.tt-head{flex:1; background:var(--bg-2); font-size:11.5px; color:var(--ink-2); font-weight:600; padding:8px 6px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); text-align:center;}
+.tt-body-row{display:flex; position:relative; height:440px;}
+.tt-time-col{flex:0 0 56px; width:56px; position:relative; height:440px; border-right:1px solid var(--line);}
+.tt-time{position:absolute; right:6px; font-size:10.5px; color:var(--faint); transform:translateY(-6px);}
+.tt-day-col{flex:1; position:relative; height:440px; border-right:1px solid var(--line);
+  background-image:repeating-linear-gradient(to bottom, transparent, transparent 43px, var(--line-soft) 43px, var(--line-soft) 44px);}
+.block{position:absolute; left:3px; right:3px; border-radius:2px; padding:5px 7px; font-size:11px; border:1px solid; line-height:1.3; overflow:hidden;}
+.block.published{background:var(--accent-soft); border-color:#C4CFE6; color:var(--accent-ink);}
+.block.draft{background:var(--draft-soft); border-color:#E1D9BC; color:var(--draft-ink);}
+.block.conflict{background:var(--warn-soft); border-color:#E3BEBE; color:var(--warn-ink); box-shadow:0 0 0 1px var(--warn) inset;}
+.block .c{font-weight:600; display:block;}
+.block .r{opacity:.85; display:block;}
+.avail-overlay{position:absolute; left:0; right:0; border-top:1px dashed var(--warn); border-bottom:1px dashed var(--warn);
+  background:repeating-linear-gradient(45deg, rgba(156,62,62,0.07), rgba(156,62,62,0.07) 6px, rgba(156,62,62,0.13) 6px, rgba(156,62,62,0.13) 12px);
+  font-size:10px; color:var(--warn-ink); padding:3px 6px; box-sizing:border-box;}
+
+.conflict-card{border:1px solid var(--line); border-left:3px solid var(--warn); border-radius:var(--radius); padding:13px 15px; background:var(--surface); display:flex; flex-direction:column; gap:8px;}
+.conflict-card .head{display:flex; justify-content:space-between; align-items:center;}
+.conflict-card .kind{font-size:12px; font-weight:600; color:var(--warn-ink);}
+.conflict-card .sev{font-size:11px; color:var(--muted);}
+.conflict-card p{margin:0; font-size:13px; color:var(--ink-2);}
+.conflict-card .actions{display:flex; gap:8px; margin-top:2px;}
+
+.insight-card{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); padding:13px 15px; background:var(--surface); display:flex; flex-direction:column; gap:8px;}
+.insight-card.good{border-left-color:var(--ok);}
+.insight-card.flagged{border-left-color:var(--warn);}
+.insight-card .head{display:flex; justify-content:space-between; align-items:center;}
+.insight-card .kind{font-size:12px; font-weight:600; color:var(--accent-ink);}
+.insight-card.good .kind{color:#295C42;}
+.insight-card.flagged .kind{color:var(--warn-ink);}
+.insight-card .sev{font-size:11px; color:var(--muted);}
+.insight-card p{margin:0; font-size:13px; color:var(--ink-2);}
+.insight-card .actions{display:flex; gap:8px; margin-top:2px;}
+
+.workload-bar{height:8px; border-radius:4px; background:var(--bg-2); overflow:hidden; border:1px solid var(--line-soft);}
+.workload-bar > div{height:100%; background:var(--accent);}
+
+.avail-grid{display:flex; flex-direction:column; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+.avail-row{display:flex; gap:1px;}
+.avail-row > div{background:var(--surface); padding:8px 6px; font-size:11.5px; text-align:center; color:var(--muted); flex:1;}
+.avail-row > div:first-child{flex:0 0 70px;}
+.avail-grid .hd{background:var(--bg-2); font-weight:600; color:var(--ink-2);}
+.avail-cell{cursor:pointer; font-weight:500;}
+.avail-cell.avail{background:var(--ok-soft); color:#295C42;}
+.avail-cell.pref{background:var(--accent-soft); color:var(--accent-ink); font-weight:600;}
+.avail-cell.unavail{background:var(--surface); color:var(--line); font-weight:400;}
+
+.avail-summary{display:flex; flex-wrap:wrap; margin-bottom:10px;}
+.sum-item{font-size:12.5px; font-weight:600; padding:4px 10px; border-radius:20px; margin:0 8px 6px 0;}
+.sum-item.avail{background:var(--ok-soft); color:#295C42;}
+.sum-item.pref{background:var(--accent-soft); color:var(--accent-ink);}
+.sum-item.unavail{background:var(--bg-2); color:var(--ink-2);}
+.avail-legend{display:flex; align-items:center; flex-wrap:wrap; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--line-soft);}
+.legend-item{font-size:11.5px; padding:2px 8px; border-radius:20px; margin:0 10px 4px 0;}
+.legend-item.avail{background:var(--ok-soft); color:#295C42;}
+.legend-item.pref{background:var(--accent-soft); color:var(--accent-ink);}
+.legend-item.unavail{background:var(--bg-2); color:var(--ink-2);}
+
+.notice{display:flex; gap:10px; padding:11px 13px; border-bottom:1px solid var(--line-soft);}
+.notice:last-child{border-bottom:none;}
+.notice .ndot{width:7px;height:7px;border-radius:50%;background:var(--accent); margin-top:6px; flex:none;}
+.notice.read .ndot{background:var(--line);}
+.notice .body{display:flex; flex-direction:column; gap:2px;}
+.notice .body .t{font-size:13px; color:var(--ink-2);}
+.notice .body .ts{font-size:11px; color:var(--faint);}
+
+.two-col{display:flex; gap:16px; align-items:flex-start;}
+.two-col > *:first-child{flex:1.6; min-width:0;}
+.two-col > *:last-child{flex:1; min-width:0;}
+.small-muted{font-size:12px; color:var(--muted);}
+.hint{font-size:12px; color:var(--muted); margin-top:2px;}
+</style>
+</head>
+<body>
+<div class="landing-wrap" id="landing">
+  <div class="landing-brand"><span class="name">Academic Scheduling</span><span class="sub">Timetables · Rooms · Equipment · Faculty</span></div>
+  <div class="landing-cards"><button class="account-card" onclick="chooseRole('Scheduler')">
+  <div class="avatar-lg">MB</div>
+  <div class="aname">Maya Brooks</div>
+  <div class="arole">Scheduler</div>
+  <div class="blurb">Builds timetables, manages rooms & equipment, resolves conflicts.</div>
+  <div class="go">Continue as scheduler →</div>
+</button><button class="account-card" onclick="chooseRole('Instructor')">
+  <div class="avatar-lg">LB</div>
+  <div class="aname">L. Bianchi</div>
+  <div class="arole">Instructor</div>
+  <div class="blurb">Views teaching schedule, submits availability and equipment needs.</div>
+  <div class="go">Continue as instructor →</div>
+</button><button class="account-card" onclick="chooseRole('Student')">
+  <div class="avatar-lg">JE</div>
+  <div class="aname">Jordan Ellis</div>
+  <div class="arole">Student</div>
+  <div class="blurb">Views class/exam calendar and schedule-change notices.</div>
+  <div class="go">Continue as student →</div>
+</button></div>
+  <div class="landing-note">Fall 2026 — sign in with your Core Platform account to see your timetable, room, and equipment tools.</div>
+</div><div class="role-frame" id="role-Scheduler" style="display:none"><div class="screen" id="screen-timetable" style="display:none"><div class="app-shell">
+<aside class="sidebar">
+  <div class="wordmark"><span class="name">Academic Scheduling</span><span class="sub">Timetables · Rooms · Equipment · Faculty</span></div>
+  <div class="nav-group"><div class="nav-label">Scheduler views</div><button class="nav-item active" data-key="timetable" onclick="showScreen('timetable')"><span class="dot"></span>Timetable Builder</button><button class="nav-item" data-key="conflicts" onclick="showScreen('conflicts')"><span class="dot"></span>Conflicts</button><button class="nav-item" data-key="rooms" onclick="showScreen('rooms')"><span class="dot"></span>Catalog & Bookings</button><button class="nav-item" data-key="insights" onclick="showScreen('insights')"><span class="dot"></span>Insights</button></div>
+  <div class="sidebar-foot">
+    <div class="avatar">MB</div>
+    <div class="who"><span class="n">Maya Brooks</span><span class="r">Scheduler · Fall 2026</span></div>
+  </div>
+  <button class="btn quiet switch-account" onclick="goToLanding()">Switch account</button>
+</aside>
+<div class="main">
+<div class="topbar">
+  <div class="crumb"><h1>Timetable Builder</h1><span class="term">Fall 2026 ▾</span></div>
+  <div class="top-actions"><span class="tag draft">Draft</span><button class="btn quiet">Preview</button><button class="btn primary">Publish term</button></div>
+</div>
+<div class="content">
+  <div class="panel"><div class="panel-head"><h2>Fall 2026 — Undergraduate sections</h2><span class="meta">7 sections · 2 unresolved conflicts</span></div></div>
+  <div class="panel"><div class="panel-head"><h2>Spring 2027 prep</h2><span class="meta">2 of 4 instructors have submitted availability · 2 not yet submitted</span></div></div>
+  <div class="split">
+    <div>
+      <div class="panel-head" style="padding-left:0;border-bottom:none;"><h2>Sections</h2><span class="meta">Drag onto grid</span></div>
+      <div class="sec-card">
+  <div class="top"><div><div class="code">CS 201</div><div class="title">Data Structures</div></div>
+  <span class="tag published">Published</span></div>
+  <div class="meta"><span>Hale Hall 204</span><span>Dr. Okafor</span><span>Mon,Wed,Fri · 9:00–9:50</span><span>Needs: Projector</span></div>
+</div><div class="sec-card">
+  <div class="top"><div><div class="code">MATH 210</div><div class="title">Linear Algebra</div></div>
+  <span class="tag published">Published</span></div>
+  <div class="meta"><span>Founders 110</span><span>Prof. Bianchi</span><span>Tue,Thu · 10:00–11:15</span></div>
+</div><div class="sec-card">
+  <div class="top"><div><div class="code">ENG 101</div><div class="title">Composition I</div></div>
+  <span class="tag published">Published</span></div>
+  <div class="meta"><span>Carter Center 301</span><span>Dr. Suzuki</span><span>Tue,Thu · 9:00–9:50</span><span>Needs: Document camera</span></div>
+</div><div class="sec-card">
+  <div class="top"><div><div class="code">BIO 150</div><div class="title">Cell Biology</div></div>
+  <span class="tag published">Published</span></div>
+  <div class="meta"><span>Sci Building 02</span><span>Prof. Alvarez</span><span>Mon,Wed,Fri · 11:00–11:50</span></div>
+</div><div class="sec-card">
+  <div class="top"><div><div class="code">PHYS 110</div><div class="title">Intro Physics</div></div>
+  <span class="tag published">Published</span></div>
+  <div class="meta"><span>Hale Hall 204</span><span>Dr. Okafor</span><span>Tue,Thu · 2:00–3:15 pm</span><span>Needs: Projector</span></div>
+</div><div class="sec-card">
+  <div class="top"><div><div class="code">CS 340</div><div class="title">Databases</div></div>
+  <span class="tag conflict">Conflict</span></div>
+  <div class="meta"><span>Innovation Lab B</span><span>Dr. Novak</span><span>Mon,Wed · 1:00–2:15 pm</span></div>
+</div><div class="sec-card">
+  <div class="top"><div><div class="code">ART 220</div><div class="title">Studio Painting</div></div>
+  <span class="tag conflict">Conflict</span></div>
+  <div class="meta"><span>Innovation Lab B</span><span>Prof. Alvarez</span><span>Mon · 1:00–3:50 pm</span><span>Needs: Portable mic kit</span></div>
+</div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Week grid</h2><select onchange="toggleAvailLens(this)" style="font-size:11.5px;padding:3px 6px;">
+      <option value="none" selected>Show availability: none</option>
+      <option value="novak">Show availability: Dr. Novak</option>
+    </select></div>
+      <div class="panel-body"><div class="grid-wrap">
+<div class="tt-grid">
+  <div class="tt-header-row"><div class="tt-corner"></div><div class="tt-head">Mon</div><div class="tt-head">Tue</div><div class="tt-head">Wed</div><div class="tt-head">Thu</div><div class="tt-head">Fri</div></div>
+  <div class="tt-body-row">
+    <div class="tt-time-col"><div class="tt-time" style="top:0px">8:00</div><div class="tt-time" style="top:44px">9:00</div><div class="tt-time" style="top:88px">10:00</div><div class="tt-time" style="top:132px">11:00</div><div class="tt-time" style="top:176px">12:00</div><div class="tt-time" style="top:220px">1:00</div><div class="tt-time" style="top:264px">2:00</div><div class="tt-time" style="top:308px">3:00</div><div class="tt-time" style="top:352px">4:00</div><div class="tt-time" style="top:396px">5:00</div><div class="tt-time" style="top:440px">6:00</div></div>
+    <div class="tt-day-col"><div class="avail-overlay" id="avail-overlay-novak" style="top:176px; height:88px; display:none;">Dr. Novak — Unavailable</div><div class="block published" style="top:44px; height:44px; left:3px; right:3px;"><span class="c">CS 201</span><span class="r">9:00–9:50 · Hale Hall 204</span></div><div class="block published" style="top:132px; height:44px; left:3px; right:3px;"><span class="c">BIO 150</span><span class="r">11:00–11:50 · Sci Building 02</span></div><div class="block conflict" style="top:220px; height:66px; left:calc(0.0% + 3px); right:calc(50.0% + 3px);"><span class="c">CS 340</span><span class="r">1:00–2:15 pm · Innovation Lab B</span></div><div class="block conflict" style="top:220px; height:132px; left:calc(50.0% + 3px); right:calc(0.0% + 3px);"><span class="c">ART 220</span><span class="r">1:00–3:50 pm · Innovation Lab B</span></div></div><div class="tt-day-col"><div class="block published" style="top:88px; height:66px; left:3px; right:3px;"><span class="c">MATH 210</span><span class="r">10:00–11:15 · Founders 110</span></div><div class="block published" style="top:44px; height:44px; left:3px; right:3px;"><span class="c">ENG 101</span><span class="r">9:00–9:50 · Carter Center 301</span></div><div class="block published" style="top:264px; height:66px; left:3px; right:3px;"><span class="c">PHYS 110</span><span class="r">2:00–3:15 pm · Hale Hall 204</span></div></div><div class="tt-day-col"><div class="block published" style="top:44px; height:44px; left:3px; right:3px;"><span class="c">CS 201</span><span class="r">9:00–9:50 · Hale Hall 204</span></div><div class="block published" style="top:132px; height:44px; left:3px; right:3px;"><span class="c">BIO 150</span><span class="r">11:00–11:50 · Sci Building 02</span></div><div class="block conflict" style="top:220px; height:66px; left:3px; right:3px;"><span class="c">CS 340</span><span class="r">1:00–2:15 pm · Innovation Lab B</span></div></div><div class="tt-day-col"><div class="block published" style="top:88px; height:66px; left:3px; right:3px;"><span class="c">MATH 210</span><span class="r">10:00–11:15 · Founders 110</span></div><div class="block published" style="top:44px; height:44px; left:3px; right:3px;"><span class="c">ENG 101</span><span class="r">9:00–9:50 · Carter Center 301</span></div><div class="block published" style="top:264px; height:66px; left:3px; right:3px;"><span class="c">PHYS 110</span><span class="r">2:00–3:15 pm · Hale Hall 204</span></div></div><div class="tt-day-col"><div class="block published" style="top:44px; height:44px; left:3px; right:3px;"><span class="c">CS 201</span><span class="r">9:00–9:50 · Hale Hall 204</span></div><div class="block published" style="top:132px; height:44px; left:3px; right:3px;"><span class="c">BIO 150</span><span class="r">11:00–11:50 · Sci Building 02</span></div></div>
+  </div>
+</div>
+</div></div>
+    </div>
+  </div>
+</div>
+</div>
+</div></div><div class="screen" id="screen-conflicts" style="display:none"><div class="app-shell">
+<aside class="sidebar">
+  <div class="wordmark"><span class="name">Academic Scheduling</span><span class="sub">Timetables · Rooms · Equipment · Faculty</span></div>
+  <div class="nav-group"><div class="nav-label">Scheduler views</div><button class="nav-item" data-key="timetable" onclick="showScreen('timetable')"><span class="dot"></span>Timetable Builder</button><button class="nav-item active" data-key="conflicts" onclick="showScreen('conflicts')"><span class="dot"></span>Conflicts</button><button class="nav-item" data-key="rooms" onclick="showScreen('rooms')"><span class="dot"></span>Catalog & Bookings</button><button class="nav-item" data-key="insights" onclick="showScreen('insights')"><span class="dot"></span>Insights</button></div>
+  <div class="sidebar-foot">
+    <div class="avatar">MB</div>
+    <div class="who"><span class="n">Maya Brooks</span><span class="r">Scheduler · Fall 2026</span></div>
+  </div>
+  <button class="btn quiet switch-account" onclick="goToLanding()">Switch account</button>
+</aside>
+<div class="main">
+<div class="topbar">
+  <div class="crumb"><h1>Conflicts</h1><span class="term">Fall 2026 ▾</span></div>
+  <div class="top-actions"><button class="btn quiet">Filter</button><button class="btn">Re-scan schedule</button></div>
+</div>
+<div class="content">
+  <div class="filter-row panel" style="padding:12px 16px;">
+    <div class="field"><label>Type</label><select><option>All types</option><option>Room</option><option>Equipment</option><option>Instructor overlap</option><option>Instructor unavailability</option><option>Student-group</option><option>Capacity</option></select></div>
+    <div class="field"><label>Severity</label><select><option>All</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+    <div class="field"><label>Term</label><select><option>Fall 2026</option></select></div>
+    <span class="small-muted" style="margin-left:auto;">6 open conflicts detected on last save, Sep 18, 9:41 am</span>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:10px;"><div class="conflict-card">
+  <div class="head"><span class="kind">Room double-booking</span><span class="sev">Severity: High</span></div>
+  <p>Innovation Lab B is assigned to two sections that overlap on Monday, 1:00–2:15 pm.</p>
+  <div><span class="chip">CS 340 · Dr. Novak</span><span class="chip">ART 220 · Prof. Alvarez</span></div>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn">Reassign</button><button class="btn quiet">Dismiss</button></div>
+</div><div class="conflict-card">
+  <div class="head"><span class="kind">Instructor unavailability</span><span class="sev">Severity: High</span></div>
+  <p>Dr. Novak submitted Monday 12:00–2:00 pm as unavailable for Fall 2026, but CS 340 is scheduled Monday 1:00–2:15 pm.</p>
+  <div><span class="chip">CS 340 · Dr. Novak · Mon 1:00–2:15 pm</span></div>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn">Reassign</button><button class="btn quiet">Dismiss</button></div>
+</div><div class="conflict-card">
+  <div class="head"><span class="kind">Equipment double-booking</span><span class="sev">Severity: Medium</span></div>
+  <p>The Portable mic kit is reserved for two overlapping bookings on Monday, 1:00–3:50 pm.</p>
+  <div><span class="chip">ART 220 · Prof. Alvarez</span><span class="chip">Faculty Senate meeting · 2:00–3:00 pm</span></div>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn">Reassign</button><button class="btn quiet">Dismiss</button></div>
+</div><div class="conflict-card">
+  <div class="head"><span class="kind">Capacity exceeded</span><span class="sev">Severity: Medium</span></div>
+  <p>Carter Center 301 seats 80, but SIS reports 92 students enrolled in this section.</p>
+  <div><span class="chip">ENG 101 · Dr. Suzuki · Carter Center 301</span></div>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn">Reassign</button><button class="btn quiet">Dismiss</button></div>
+</div><div class="conflict-card">
+  <div class="head"><span class="kind">Instructor overlap</span><span class="sev">Severity: High</span></div>
+  <p>Dr. Novak is scheduled to teach two sections with a 45-minute overlap on Monday.</p>
+  <div><span class="chip">CS 340 · 1:00–2:15 pm</span><span class="chip">Thesis Seminar · 1:30–2:30 pm</span></div>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn">Reassign</button><button class="btn quiet">Dismiss</button></div>
+</div><div class="conflict-card">
+  <div class="head"><span class="kind">Student-group clash</span><span class="sev">Severity: Low</span></div>
+  <p>14 students are enrolled in both listed sections, which meet at overlapping times on Tuesday.</p>
+  <div><span class="chip">MATH 210 · 10:00–11:15 am</span><span class="chip">PHYS 110 Lab · 10:30–11:45 am</span></div>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn">Reassign</button><button class="btn quiet">Dismiss</button></div>
+</div></div>
+</div>
+</div>
+</div></div><div class="screen" id="screen-rooms" style="display:none"><div class="app-shell">
+<aside class="sidebar">
+  <div class="wordmark"><span class="name">Academic Scheduling</span><span class="sub">Timetables · Rooms · Equipment · Faculty</span></div>
+  <div class="nav-group"><div class="nav-label">Scheduler views</div><button class="nav-item" data-key="timetable" onclick="showScreen('timetable')"><span class="dot"></span>Timetable Builder</button><button class="nav-item" data-key="conflicts" onclick="showScreen('conflicts')"><span class="dot"></span>Conflicts</button><button class="nav-item active" data-key="rooms" onclick="showScreen('rooms')"><span class="dot"></span>Catalog & Bookings</button><button class="nav-item" data-key="insights" onclick="showScreen('insights')"><span class="dot"></span>Insights</button></div>
+  <div class="sidebar-foot">
+    <div class="avatar">MB</div>
+    <div class="who"><span class="n">Maya Brooks</span><span class="r">Scheduler · Fall 2026</span></div>
+  </div>
+  <button class="btn quiet switch-account" onclick="goToLanding()">Switch account</button>
+</aside>
+<div class="main">
+<div class="topbar">
+  <div class="crumb"><h1>Catalog & Bookings</h1><span class="term">Fall 2026 ▾</span></div>
+  <div class="top-actions"></div>
+</div>
+<div class="content">
+  <div class="panel">
+    <div class="panel-head"><h2>Subjects catalog</h2><div style="display:flex;align-items:center;gap:8px;"><span class="meta">8 subjects</span><button class="btn" style="padding:4px 9px;">Add subject</button><button class="btn quiet" style="padding:4px 9px;">Import</button></div></div>
+    <div class="panel-body"><table><thead><tr><th>Code</th><th>Title</th><th>Credits</th><th>Default room type</th><th>Equipment needed</th><th>Status</th></tr></thead>
+    <tbody><tr><td>CS 201</td><td>Data Structures</td><td>3</td><td>Lecture hall</td><td>Projector</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>MATH 210</td><td>Linear Algebra</td><td>3</td><td>Seminar room</td><td>—</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>ENG 101</td><td>Composition I</td><td>3</td><td>Lecture hall</td><td>Document camera</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>BIO 150</td><td>Cell Biology</td><td>4</td><td>Wet lab</td><td>—</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>PHYS 110</td><td>Intro Physics</td><td>3</td><td>Lecture hall</td><td>Projector</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>CS 340</td><td>Databases</td><td>3</td><td>Computer lab</td><td>—</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>ART 220</td><td>Studio Painting</td><td>3</td><td>Studio/lab</td><td>Portable mic kit</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>CS 450</td><td>Advanced Algorithms</td><td>3</td><td>Lecture hall</td><td>Projector</td>
+<td><span class="tag draft">Not yet scheduled</span></td></tr></tbody></table>
+      <div class="filter-row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft);">
+        <div class="field"><label>Subject code</label><input value="PSY 220"></div>
+        <div class="field"><label>Title</label><input value="Cognitive Psychology"></div>
+        <div class="field" style="max-width:90px;"><label>Credits</label><input value="3"></div>
+        <div class="field"><label>Default room type</label><select><option>Lecture hall</option><option>Seminar room</option><option>Computer lab</option><option>Wet lab</option><option>Studio/lab</option></select></div>
+        <button class="btn primary">Add subject</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Room catalog</h2><div style="display:flex;align-items:center;gap:8px;"><span class="meta">5 rooms · 4 buildings</span><button class="btn" style="padding:4px 9px;">Add room</button><button class="btn quiet" style="padding:4px 9px;">Import</button></div></div>
+    <div class="panel-body"><table><thead><tr><th>Room</th><th>Building</th><th>Capacity</th><th>Type</th><th>Equipment</th><th>Status</th></tr></thead>
+    <tbody><tr><td>Hale Hall 204</td><td>Hale Hall</td><td>120</td><td>Lecture hall</td><td>Projector · Mic · Whiteboard</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>Innovation Lab B</td><td>Innovation Center</td><td>32</td><td>Computer lab</td><td>16 workstations · Smartboard</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>Founders 110</td><td>Founders Hall</td><td>24</td><td>Seminar room</td><td>Whiteboard</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>Carter Center 301</td><td>Carter Center</td><td>80</td><td>Lecture hall</td><td>Projector · Sound system</td>
+<td><span class="tag ok">Active</span></td></tr><tr><td>Sci Building 02</td><td>Science Building</td><td>28</td><td>Wet lab</td><td>Fume hoods · Gas lines</td>
+<td><span class="tag conflict">Maintenance</span></td></tr></tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Equipment catalog</h2><div style="display:flex;align-items:center;gap:8px;"><span class="meta">4 item types · 15 units</span><button class="btn" style="padding:4px 9px;">Add equipment</button><button class="btn quiet" style="padding:4px 9px;">Import</button></div></div>
+    <div class="panel-body"><table><thead><tr><th>Item</th><th>Type</th><th>Units</th><th>Home location</th><th>Status</th></tr></thead>
+    <tbody><tr><td>Projector — Epson EX3280</td><td>Portable projector</td><td>6</td><td>AV Storage, Hale Hall</td>
+<td><span class="tag ok">Available</span></td></tr><tr><td>Laptop cart (16 units)</td><td>Mobile laptop cart</td><td>2</td><td>Innovation Center</td>
+<td><span class="tag ok">Available</span></td></tr><tr><td>Portable mic kit</td><td>Wireless mic + speaker</td><td>4</td><td>Founders Hall</td>
+<td><span class="tag draft">Checked out</span></td></tr><tr><td>Document camera</td><td>Overhead visual presenter</td><td>3</td><td>AV Storage, Hale Hall</td>
+<td><span class="tag conflict">Maintenance</span></td></tr></tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Import from file</h2><span class="meta">Last run: Sep 29, 2:10 pm</span></div>
+    <div class="panel-body">
+      <div class="filter-row">
+        <div class="field" style="flex:1;min-width:280px;"><label>What are you importing?</label>
+          <select><option>Subjects — ready-made schedule (room &amp; time already assigned)</option><option>Subjects — list only (not yet scheduled)</option><option>Rooms</option><option>Equipment</option></select>
+        </div>
+        <div class="field"><label>File</label><input value="fall2026-additions.csv" readonly></div>
+        <button class="btn quiet">Download template</button>
+        <button class="btn primary">Upload &amp; preview</button>
+      </div>
+      <div class="hint">Column requirements for each import type are documented in the User's Guide.</div>
+      <table style="margin-top:12px;"><thead><tr><th>Subject</th><th>Title</th><th>Placement</th><th>Status</th></tr></thead>
+      <tbody><tr><td>HIST 120</td><td>Modern World History</td><td>MW 10:00–10:50 am · Carter Center 301</td>
+<td><span class="tag ok">Added</span></td></tr><tr><td>PSY 220</td><td>Cognitive Psychology</td><td>TTh 1:00–2:15 pm · Founders 110</td>
+<td><span class="tag ok">Added</span></td></tr><tr><td>CS 450L</td><td>Algorithms Lab</td><td>TTh 2:30–3:45 pm · room not recognized</td>
+<td><span class="tag draft">Needs review</span></td></tr></tbody></table>
+      <div class="hint">2 rows added directly to the Draft timetable; 1 row needs review before it can be placed.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Search availability</h2></div>
+    <div class="panel-body">
+      <div class="filter-row">
+        <div class="field"><label>Looking for</label><select><option>Room</option><option>Equipment</option></select></div>
+        <div class="field"><label>Date</label><input value="Tue, Oct 14, 2026"></div>
+        <div class="field"><label>Time</label><input value="5:00 pm – 6:30 pm"></div>
+        <div class="field"><label>Min. capacity</label><input value="20"></div>
+        <div class="field"><label>Room type</label><select><option>Any</option><option>Lecture hall</option><option>Lab</option><option>Seminar room</option></select></div>
+        <button class="btn primary">Search</button>
+      </div>
+      <div class="check-row" style="margin-top:10px;">
+        <span class="check">☑ Projector</span><span class="check">☐ Computers</span><span class="check">☐ Sound system</span><span class="check">☐ Accessible entrance</span>
+      </div>
+      <div class="hint">3 rooms available for the selected window: Founders 110, Carter Center 301, Hale Hall 204. 4 units of Projector — Epson EX3280 are free for the same window.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Booking requests</h2><span class="meta">3 pending</span></div>
+    <div class="panel-body"><table><thead><tr><th>Requested by</th><th>Purpose</th><th>Resource type</th><th>Room / Equipment</th><th>When</th><th>Status</th><th></th></tr></thead>
+    <tbody><tr><td>Dr. Okafor</td><td>Exam review session</td><td><span class='chip' style='margin:0;'>Room</span></td><td>Founders 110</td><td class='mono'>Oct 14 · 5:00–6:30 pm</td><td><span class='tag draft'>Pending</span></td><td><button class="btn" style="padding:4px 9px;">Approve</button><button class="btn quiet" style="padding:4px 9px;">Cancel</button></td></tr><tr><td>Campus Events Office</td><td>Guest lecture</td><td><span class='chip' style='margin:0;'>Room</span></td><td>Carter Center 301</td><td class='mono'>Oct 20 · 2:00–4:00 pm</td><td><span class='tag draft'>Pending</span></td><td><button class="btn" style="padding:4px 9px;">Approve</button><button class="btn quiet" style="padding:4px 9px;">Cancel</button></td></tr><tr><td>Dr. Suzuki</td><td>Guest lecture visual aid</td><td><span class='chip' style='margin:0;'>Equipment</span></td><td>Projector — Epson EX3280</td><td class='mono'>Oct 20 · 2:00–4:00 pm</td><td><span class='tag draft'>Pending</span></td><td><button class="btn" style="padding:4px 9px;">Approve</button><button class="btn quiet" style="padding:4px 9px;">Cancel</button></td></tr><tr><td>Prof. Bianchi</td><td>Makeup exam</td><td><span class='chip' style='margin:0;'>Room</span></td><td>Innovation Lab B</td><td class='mono'>Oct 9 · 9:00–10:30 am</td><td><span class='tag ok'>Approved</span></td><td>—</td></tr><tr><td>Prof. Alvarez</td><td>Studio critique recording</td><td><span class='chip' style='margin:0;'>Equipment</span></td><td>Portable mic kit</td><td class='mono'>Oct 11 · 1:00–3:50 pm</td><td><span class='tag ok'>Approved</span></td><td>—</td></tr><tr><td>Student Chess Club</td><td>Weekly meetup</td><td><span class='chip' style='margin:0;'>Room</span></td><td>Founders 110</td><td class='mono'>Oct 8 · 6:00–8:00 pm</td><td><span class='tag conflict'>Cancelled</span></td><td>—</td></tr></tbody></table></div>
+  </div>
+</div>
+</div>
+</div></div><div class="screen" id="screen-insights" style="display:none"><div class="app-shell">
+<aside class="sidebar">
+  <div class="wordmark"><span class="name">Academic Scheduling</span><span class="sub">Timetables · Rooms · Equipment · Faculty</span></div>
+  <div class="nav-group"><div class="nav-label">Scheduler views</div><button class="nav-item" data-key="timetable" onclick="showScreen('timetable')"><span class="dot"></span>Timetable Builder</button><button class="nav-item" data-key="conflicts" onclick="showScreen('conflicts')"><span class="dot"></span>Conflicts</button><button class="nav-item" data-key="rooms" onclick="showScreen('rooms')"><span class="dot"></span>Catalog & Bookings</button><button class="nav-item active" data-key="insights" onclick="showScreen('insights')"><span class="dot"></span>Insights</button></div>
+  <div class="sidebar-foot">
+    <div class="avatar">MB</div>
+    <div class="who"><span class="n">Maya Brooks</span><span class="r">Scheduler · Fall 2026</span></div>
+  </div>
+  <button class="btn quiet switch-account" onclick="goToLanding()">Switch account</button>
+</aside>
+<div class="main">
+<div class="topbar">
+  <div class="crumb"><h1>Insights</h1><span class="term">Fall 2026 ▾</span></div>
+  <div class="top-actions"></div>
+</div>
+<div class="content">
+  <div class="panel" style="padding:10px 16px;"><span class="hint">Advisory only — these are suggestions, not conflicts. Nothing changes until you act on one.</span></div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Instructor utilization</h2><span class="meta">Fall 2026</span></div>
+    <div class="panel-body"><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Dr. Okafor</span><span>10 of 14 available hrs scheduled (71%)</span></div><div class="workload-bar"><div style="width:71%"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Prof. Bianchi</span><span>6 of 18 available hrs scheduled (33%)</span></div><div class="workload-bar"><div style="width:33%"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Dr. Suzuki</span><span>5 of 8 available hrs scheduled (62%)</span></div><div class="workload-bar"><div style="width:62%"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Dr. Novak</span><span>2 of 8 available hrs scheduled (25%)</span></div><div class="workload-bar"><div style="width:25%"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Prof. Alvarez</span><span>9 of 10 available hrs scheduled (90%)</span></div><div class="workload-bar"><div style="width:90%"></div></div></div></div>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:10px;"><div class="insight-card suggest">
+  <div class="head"><span class="kind">Open availability</span><span class="sev">Axis: Instructor utilization</span></div>
+  <p>Prof. Bianchi is scheduled for only 33% of their declared available hours this term.</p>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn quiet">Dismiss suggestion</button></div>
+</div><div class="insight-card suggest">
+  <div class="head"><span class="kind">Open availability</span><span class="sev">Axis: Instructor utilization</span></div>
+  <p>Dr. Novak is scheduled for only 25% of their declared available hours this term. Dr. Novak also has an open Instructor unavailability conflict — resolving it may free up a better placement.</p>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn quiet">Dismiss suggestion</button></div>
+</div><div class="insight-card good">
+  <div class="head"><span class="kind">Well balanced</span><span class="sev">Axis: Instructor utilization</span></div>
+  <p>Prof. Alvarez is scheduled for 90% of their declared available hours — a healthy, sustainable load.</p>
+  
+</div></div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Room utilization</h2><span class="meta">Mon–Fri · 8:00 am–6:00 pm</span></div>
+    <div class="panel-body"><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Hale Hall 204 (cap. 120)</span><span>20% of open hours booked · avg 36% of capacity filled</span></div><div class="workload-bar"><div style="width:20%"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Innovation Lab B (cap. 32)</span><span>35% of open hours booked · avg 78% of capacity filled</span></div><div class="workload-bar"><div style="width:35%"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Founders 110 (cap. 24)</span><span>10% of open hours booked · avg 75% of capacity filled</span></div><div class="workload-bar"><div style="width:10%"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;"><span>Carter Center 301 (cap. 80)</span><span>20% of open hours booked · avg 115% of capacity filled</span></div><div class="workload-bar"><div style="width:20%"></div></div></div></div>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:10px;"><div class="insight-card suggest">
+  <div class="head"><span class="kind">Oversized for its sections</span><span class="sev">Axis: Room capacity</span></div>
+  <p>Sections in Hale Hall 204 use only 36% of its capacity on average — swapping for a smaller room would free it for larger courses.</p>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn quiet">Dismiss suggestion</button></div>
+</div><div class="insight-card good">
+  <div class="head"><span class="kind">Well utilized</span><span class="sev">Axis: Room capacity</span></div>
+  <p>Innovation Lab B runs at a healthy 78% average fill when booked — no action needed.</p>
+  
+</div><div class="insight-card suggest">
+  <div class="head"><span class="kind">Room underused</span><span class="sev">Axis: Room capacity</span></div>
+  <p>Founders 110 sits empty roughly 90% of the week — a good candidate for additional sections or events.</p>
+  <div class="actions"><button class="btn primary">Open in timetable</button><button class="btn quiet">Dismiss suggestion</button></div>
+</div><div class="insight-card flagged">
+  <div class="head"><span class="kind">Already flagged</span><span class="sev">Axis: Room capacity</span></div>
+  <p>Carter Center 301 is running at 115% of capacity — already raised as a Capacity exceeded conflict; see Conflicts.</p>
+  
+</div></div>
+</div>
+</div>
+</div></div></div><div class="role-frame" id="role-Instructor" style="display:none"><div class="screen" id="screen-instructor" style="display:none"><div class="app-shell">
+<aside class="sidebar">
+  <div class="wordmark"><span class="name">Academic Scheduling</span><span class="sub">Timetables · Rooms · Equipment · Faculty</span></div>
+  <div class="nav-group"><div class="nav-label">Instructor views</div><button class="nav-item active" data-key="instructor" onclick="showScreen('instructor')"><span class="dot"></span>My Teaching</button></div>
+  <div class="sidebar-foot">
+    <div class="avatar">LB</div>
+    <div class="who"><span class="n">L. Bianchi</span><span class="r">Instructor · Fall 2026</span></div>
+  </div>
+  <button class="btn quiet switch-account" onclick="goToLanding()">Switch account</button>
+</aside>
+<div class="main">
+<div class="topbar">
+  <div class="crumb"><h1>My Teaching</h1><span class="term">Fall 2026 ▾</span></div>
+  <div class="top-actions"><button class="btn">Message scheduler</button></div>
+</div>
+<div class="content">
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-head"><h2>Teaching schedule</h2><span class="meta">Fall 2026 · 2 sections</span></div>
+      <div class="panel-body"><div class="grid-wrap">
+<div class="tt-grid">
+  <div class="tt-header-row"><div class="tt-corner"></div><div class="tt-head">Mon</div><div class="tt-head">Tue</div><div class="tt-head">Wed</div><div class="tt-head">Thu</div><div class="tt-head">Fri</div></div>
+  <div class="tt-body-row">
+    <div class="tt-time-col"><div class="tt-time" style="top:0px">8:00</div><div class="tt-time" style="top:44px">9:00</div><div class="tt-time" style="top:88px">10:00</div><div class="tt-time" style="top:132px">11:00</div><div class="tt-time" style="top:176px">12:00</div><div class="tt-time" style="top:220px">1:00</div><div class="tt-time" style="top:264px">2:00</div><div class="tt-time" style="top:308px">3:00</div><div class="tt-time" style="top:352px">4:00</div><div class="tt-time" style="top:396px">5:00</div><div class="tt-time" style="top:440px">6:00</div></div>
+    <div class="tt-day-col"></div><div class="tt-day-col"><div class="block published" style="top:88px; height:66px; left:3px; right:3px;"><span class="c">MATH 210</span><span class="r">10:00–11:15 · Founders 110</span></div></div><div class="tt-day-col"></div><div class="tt-day-col"><div class="block published" style="top:88px; height:66px; left:3px; right:3px;"><span class="c">MATH 210</span><span class="r">10:00–11:15 · Founders 110</span></div></div><div class="tt-day-col"></div>
+  </div>
+</div>
+</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Workload</h2></div>
+      <div class="panel-body">
+        <table><thead><tr><th>Course</th><th>Sections</th><th>Credit hrs</th></tr></thead>
+        <tbody>
+          <tr><td>MATH 210</td><td>1</td><td>3</td></tr>
+          <tr><td>MATH 305</td><td>1</td><td>3</td></tr>
+        </tbody></table>
+        <div class="hint" style="margin-top:10px;">6 of 12 contact hours assigned this term</div>
+        <div class="workload-bar" style="margin-top:6px;"><div style="width:50%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Availability &amp; room needs — Spring 2027</h2><span class="meta">Due Oct 24</span></div>
+    <div class="panel-body">
+      <div class="avail-summary"><span class="sum-item avail">14 hrs open</span><span class="sum-item pref">8 hrs preferred</span><span class="sum-item unavail">28 hrs unavailable</span><span class="small-muted" style="margin-left:auto;">this week, Spring 2027</span></div>
+      <div class="avail-legend"><span class="legend-item avail">✓ Open</span><span class="legend-item pref">★ Prefer</span><span class="legend-item unavail">✕ Unavailable</span><span class="hint" style="margin-left:auto;">Click a block to cycle: Unavailable → Open → Prefer</span></div>
+      <div class="avail-grid"><div class="avail-row"><div class="hd"></div><div class="hd">Mon</div><div class="hd">Tue</div><div class="hd">Wed</div><div class="hd">Thu</div><div class="hd">Fri</div></div><div class="avail-row"><div>8–10 am</div><div class="avail-cell unavail">✕</div><div class="avail-cell pref">★ Prefer</div><div class="avail-cell unavail">✕</div><div class="avail-cell pref">★ Prefer</div><div class="avail-cell unavail">✕</div></div><div class="avail-row"><div>10–12 pm</div><div class="avail-cell avail">✓ Open</div><div class="avail-cell avail">✓ Open</div><div class="avail-cell avail">✓ Open</div><div class="avail-cell avail">✓ Open</div><div class="avail-cell unavail">✕</div></div><div class="avail-row"><div>12–2 pm</div><div class="avail-cell unavail">✕</div><div class="avail-cell unavail">✕</div><div class="avail-cell unavail">✕</div><div class="avail-cell unavail">✕</div><div class="avail-cell unavail">✕</div></div><div class="avail-row"><div>2–4 pm</div><div class="avail-cell pref">★ Prefer</div><div class="avail-cell avail">✓ Open</div><div class="avail-cell pref">★ Prefer</div><div class="avail-cell avail">✓ Open</div><div class="avail-cell avail">✓ Open</div></div><div class="avail-row"><div>4–6 pm</div><div class="avail-cell unavail">✕</div><div class="avail-cell unavail">✕</div><div class="avail-cell unavail">✕</div><div class="avail-cell unavail">✕</div><div class="avail-cell unavail">✕</div></div></div>
+      <div style="margin-top:14px;">
+        <label class="field-label" style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:6px;">Equipment needed for MATH 305</label>
+        <div class="check-row">
+          <span class="check">☑ Projector</span><span class="check">☐ Laptop cart</span><span class="check">☐ Portable mic kit</span><span class="check">☐ Document camera</span>
+        </div>
+      </div>
+      <div class="filter-row" style="margin-top:14px;">
+        <div class="field" style="flex:1; min-width:260px;"><label>Notes for the scheduler</label><input value="Prefer Innovation Lab B for MATH 305 — needs workstations."></div>
+        <button class="btn primary">Submit availability</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div></div></div><div class="role-frame" id="role-Student" style="display:none"><div class="screen" id="screen-student" style="display:none"><div class="app-shell">
+<aside class="sidebar">
+  <div class="wordmark"><span class="name">Academic Scheduling</span><span class="sub">Timetables · Rooms · Equipment · Faculty</span></div>
+  <div class="nav-group"><div class="nav-label">Student views</div><button class="nav-item active" data-key="student" onclick="showScreen('student')"><span class="dot"></span>My Calendar</button></div>
+  <div class="sidebar-foot">
+    <div class="avatar">JE</div>
+    <div class="who"><span class="n">Jordan Ellis</span><span class="r">Student · Fall 2026</span></div>
+  </div>
+  <button class="btn quiet switch-account" onclick="goToLanding()">Switch account</button>
+</aside>
+<div class="main">
+<div class="topbar">
+  <div class="crumb"><h1>My Calendar</h1><span class="term">Fall 2026 ▾</span></div>
+  <div class="top-actions"><button class="btn">Export</button></div>
+</div>
+<div class="content">
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-head"><h2>Week of Sep 21</h2><span class="meta">Day · Week · Term</span></div>
+      <div class="panel-body"><div class="grid-wrap">
+<div class="tt-grid">
+  <div class="tt-header-row"><div class="tt-corner"></div><div class="tt-head">Mon</div><div class="tt-head">Tue</div><div class="tt-head">Wed</div><div class="tt-head">Thu</div><div class="tt-head">Fri</div></div>
+  <div class="tt-body-row">
+    <div class="tt-time-col"><div class="tt-time" style="top:0px">8:00</div><div class="tt-time" style="top:44px">9:00</div><div class="tt-time" style="top:88px">10:00</div><div class="tt-time" style="top:132px">11:00</div><div class="tt-time" style="top:176px">12:00</div><div class="tt-time" style="top:220px">1:00</div><div class="tt-time" style="top:264px">2:00</div><div class="tt-time" style="top:308px">3:00</div><div class="tt-time" style="top:352px">4:00</div><div class="tt-time" style="top:396px">5:00</div><div class="tt-time" style="top:440px">6:00</div></div>
+    <div class="tt-day-col"><div class="block published" style="top:44px; height:44px; left:3px; right:3px;"><span class="c">CS 201</span><span class="r">9:00–9:50 · Hale Hall 204</span></div><div class="block published" style="top:132px; height:44px; left:3px; right:3px;"><span class="c">BIO 150</span><span class="r">11:00–11:50 · Sci Building 02</span></div></div><div class="tt-day-col"><div class="block published" style="top:88px; height:66px; left:3px; right:3px;"><span class="c">MATH 210</span><span class="r">10:00–11:15 · Founders 110</span></div></div><div class="tt-day-col"><div class="block published" style="top:44px; height:44px; left:3px; right:3px;"><span class="c">CS 201</span><span class="r">9:00–9:50 · Hale Hall 204</span></div><div class="block published" style="top:132px; height:44px; left:3px; right:3px;"><span class="c">BIO 150</span><span class="r">11:00–11:50 · Sci Building 02</span></div></div><div class="tt-day-col"><div class="block published" style="top:88px; height:66px; left:3px; right:3px;"><span class="c">MATH 210</span><span class="r">10:00–11:15 · Founders 110</span></div></div><div class="tt-day-col"><div class="block published" style="top:44px; height:44px; left:3px; right:3px;"><span class="c">CS 201</span><span class="r">9:00–9:50 · Hale Hall 204</span></div><div class="block published" style="top:132px; height:44px; left:3px; right:3px;"><span class="c">BIO 150</span><span class="r">11:00–11:50 · Sci Building 02</span></div></div>
+  </div>
+</div>
+</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Schedule notices</h2><span class="meta">2 unread</span></div>
+      <div><div class="notice "><div class="ndot"></div><div class="body"><span class="t">PHYS 110 lab moved from Sci Building 02 to Innovation Lab B, effective Oct 6.</span><span class="ts">Sep 18, 8:02 am</span></div></div><div class="notice "><div class="ndot"></div><div class="body"><span class="t">CS 201 final exam scheduled: Dec 12, 9:00–11:00 am, Hale Hall 204.</span><span class="ts">Sep 15, 4:31 pm</span></div></div><div class="notice read"><div class="ndot"></div><div class="body"><span class="t">MATH 210 section time confirmed — no change from current schedule.</span><span class="ts">Sep 10, 11:00 am</span></div></div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2>Filter</h2></div>
+    <div class="panel-body filter-row">
+      <div class="field"><label>Course</label><select><option>All courses</option><option>CS 201</option><option>MATH 210</option><option>BIO 150</option></select></div>
+      <div class="field"><label>Instructor</label><select><option>All instructors</option></select></div>
+      <div class="field"><label>Format</label><select><option>.ics</option><option>Google Calendar</option></select></div>
+      <button class="btn primary">Export selected</button>
+    </div>
+  </div>
+</div>
+</div>
+</div></div></div>
+<script>
+const roleFirst = {Scheduler:'timetable', Instructor:'instructor', Student:'student'};
+const roleOf = {timetable:'Scheduler', conflicts:'Scheduler', rooms:'Scheduler', insights:'Scheduler', instructor:'Instructor', student:'Student'};
+function showScreen(key){
+  document.querySelectorAll('.screen').forEach(el => el.style.display = 'none');
+  document.getElementById('screen-'+key).style.display = 'block';
+  document.querySelectorAll('.role-frame').forEach(el => el.style.display='none');
+  document.getElementById('role-'+roleOf[key]).style.display='block';
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-item[data-key="'+key+'"]').forEach(b=>b.classList.add('active'));
+}
+function chooseRole(role){
+  document.getElementById('landing').style.display = 'none';
+  showScreen(roleFirst[role]);
+}
+function goToLanding(){
+  document.querySelectorAll('.role-frame').forEach(el => el.style.display = 'none');
+  document.getElementById('landing').style.display = 'flex';
+}
+function toggleAvailLens(sel){
+  const ov = document.getElementById('avail-overlay-novak');
+  if (!ov) return;
+  ov.style.display = (sel.value === 'novak') ? 'block' : 'none';
+}
+document.addEventListener('DOMContentLoaded', () => {}); // landing is visible by default; nothing else to do
+</script>
+
+</body>
+</html>
